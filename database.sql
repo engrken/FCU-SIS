@@ -48,7 +48,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `password`, `sid`, `fname`, `mname`, `lname`, `address`, `contact`, `email`, `grade`, `section`, `admin`, `picture`, `ip`, `lastlogin`, `created_at`) VALUES
-(1, 'admin', '$2y$10$PaE15zS9ZefYAW6CDdgIq..JBfNvAjhPTI2iRY2C6CrTJjfHEHAUO', '00-000', 'First Name', 'Middle', 'last', 'Barangay', '099999', 'admin@admin.com', '1st Year', 'A', 1, 'Capture.PNG', '49.145.120.179', 'June 13, 2020, 8:38 am', '2020-04-02 05:41:02');
+(1, 'admin', '$2y$10$7vGIooDXuGzBy/e193Zrkufvwll4bDTv4fqGUaLN31mmd677w2YGC', '00-000', 'First Name', 'Middle', 'last', 'Barangay', '099999', 'admin@admin.com', '1st Year', 'A', 1, 'Capture.PNG', '49.145.120.179', 'June 13, 2020, 8:38 am', '2020-04-02 05:41:02');
 
 
 --
