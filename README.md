@@ -10,4 +10,4 @@ If you have any questions and/or feedbacks, feel free to comment/drop your email
 Note:
 1. Make sure to configure the connection details (see config.php)
 2. Use the account (username: admin password: admin123)
-3. Demo page https://fcusis.tk
+3. Demo page https://fcubsece.tk
