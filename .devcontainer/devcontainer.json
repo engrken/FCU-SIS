@@ -1,0 +1,29 @@
+{
+  "name": "FCU-SIS",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "GitHub.copilot",
+        "GitHub.copilot-chat"
+      ],
+      "settings": {
+        "github.copilot.chat.codeGeneration.useInstructionFiles": true
+      }
+    }
+  },
+  "forwardPorts": [
+    8080
+  ],
+  "portsAttributes": {
+    "8080": {
+      "label": "Private development preview",
+      "onAutoForward": "notify"
+    }
+  },
+  "containerEnv": {
+    "TZ": "Asia/Manila"
+  }
+}
