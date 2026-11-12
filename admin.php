@@ -1,7 +1,8 @@
 <?php
 
 // Initialize the session
-session_start();
+require_once __DIR__ . '/security.php';
+fcusis_start_session();
  
 // Check if the user is logged in, if not then redirect him to login page
 if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
@@ -10,7 +11,7 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
 }
 
 // Check if the user is admin, if not then redirect him to welcome page
-if(isset($_SESSION["admin"]) && $_SESSION["admin"] !== 1){
+if((int) ($_SESSION['admin'] ?? 0) !== 1){
     header("location: welcome.php");
     exit;
 }

@@ -1,6 +1,7 @@
 <?php
 // Initialize the session
-session_start();
+require_once __DIR__ . '/security.php';
+fcusis_start_session();
  
 // Check if the user is logged in, if not then redirect him to login page
 if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
@@ -15,21 +16,35 @@ require_once "config.php";
 
 // Check connection
 if($link === false){
-    die("ERROR: Could not connect. " . mysqli_connect_error());
+    http_response_code(503);
+    exit('This service is unavailable.');
 }
 
-if(count($_POST)>0) {
-mysqli_query($link,"UPDATE users set fname='" . $_POST['fname'] . "', mname='" . $_POST['mname'] . "', lname='" . $_POST['lname'] . "', address='" . $_POST['address'] . "' , contact='" . $_POST['contact'] . "' , email='" . $_POST['email'] . "' , grade='" . $_POST['grade'] . "', section='" . $_POST['section'] . "' WHERE username='" . $_SESSION["username"] . "'");
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    fcusis_require_csrf();
+    $first = fcusis_post('fname');
+    $middle = fcusis_post('mname');
+    $last = fcusis_post('lname');
+    $address = fcusis_post('address');
+    $contact = fcusis_post('contact');
+    $email = fcusis_post('email');
+    $grade = fcusis_post('grade');
+    $section = fcusis_post('section');
+    $update = $link->prepare('UPDATE users SET fname=?, mname=?, lname=?, address=?, contact=?, email=?, grade=?, section=? WHERE username=?');
+    $update->bind_param('sssssssss', $first, $middle, $last, $address, $contact, $email, $grade, $section, $_SESSION['username']);
+    $update->execute();
 $message = "Information Modified Successfully";
 }
-$result = mysqli_query($link,"SELECT * FROM users WHERE username='" . $_SESSION["username"] . "'");
+$select = $link->prepare('SELECT * FROM users WHERE username=?');
+$select->bind_param('s', $_SESSION['username']);
+$select->execute();
+$result = $select->get_result();
 $row= mysqli_fetch_array($result);
 
 $admincheck = mysqli_query($link,"SELECT * From users WHERE admin = 1");          
 $admin = mysqli_fetch_array($admincheck);
 
             // Close statement
-            mysqli_stmt_close($stmt);
 
 
 ?>
@@ -51,6 +66,7 @@ $admin = mysqli_fetch_array($admincheck);
         <h3>Modify Personal Information</h3>
 
 <form name="frmUser" method="post" action="">
+<input type="hidden" name="csrf" value="<?php echo fcusis_html(fcusis_csrf_token()); ?>">
 <div><?php if(isset($message)) { echo $message; } ?>
 </div>
 
@@ -59,11 +75,11 @@ $admin = mysqli_fetch_array($admincheck);
 
 <?php if($_SESSION['admin'] == 1 ) {
            ?>
-<input type="text" name="username" class="form-control" value="<?php echo $row['username']; ?>">
+<input type="text" name="username" class="form-control" value="<?php echo fcusis_html($row['username']); ?>">
  <?php
        } else {
 	?>
-<input type="text" name="username" class="form-control" value="<?php echo $row['username']; ?>"readonly>
+<input type="text" name="username" class="form-control" value="<?php echo fcusis_html($row['username']); ?>"readonly>
  <?php
        }
   ?>
@@ -73,11 +89,11 @@ $admin = mysqli_fetch_array($admincheck);
 <label>Student ID: </label>
 <?php if($_SESSION['admin'] == 1 ) {
            ?>
-<input type="text" name="sid" class="form-control" value="<?php echo $row['sid']; ?>">
+<input type="text" name="sid" class="form-control" value="<?php echo fcusis_html($row['sid']); ?>">
  <?php
        } else {
 	?>
-<input type="text" name="sid" class="form-control" value="<?php echo $row['sid']; ?>"readonly>
+<input type="text" name="sid" class="form-control" value="<?php echo fcusis_html($row['sid']); ?>"readonly>
  <?php
        }
   ?>
@@ -85,27 +101,27 @@ $admin = mysqli_fetch_array($admincheck);
 
 <div class="form-group">
 <label>First Name: </label>
-<input type="text" name="fname" class="form-control" value="<?php echo $row['fname']; ?>">
+<input type="text" name="fname" class="form-control" value="<?php echo fcusis_html($row['fname']); ?>">
 </div>
 <div class="form-group">
 <label>Middle Name :</label>
-<input type="text" name="mname" class="form-control" value="<?php echo $row['mname']; ?>">
+<input type="text" name="mname" class="form-control" value="<?php echo fcusis_html($row['mname']); ?>">
 </div>
 <div class="form-group">
 <label>Last Name :</label>
-<input type="text" name="lname" class="form-control" value="<?php echo $row['lname']; ?>">
+<input type="text" name="lname" class="form-control" value="<?php echo fcusis_html($row['lname']); ?>">
 </div>
 <div class="form-group">
 <label>Address :</label>
-<input type="text" name="address" class="form-control" value="<?php echo $row['address']; ?>">
+<input type="text" name="address" class="form-control" value="<?php echo fcusis_html($row['address']); ?>">
 </div>
 <div class="form-group">
 <label>Contact Number :</label>
-<input type="text" name="contact" class="form-control" value="<?php echo $row['contact']; ?>">
+<input type="text" name="contact" class="form-control" value="<?php echo fcusis_html($row['contact']); ?>">
 </div>
 <div class="form-group">
 <label>Email :</label>
-<input type="email" name="email" class="form-control" value="<?php echo $row['email']; ?>">
+<input type="email" name="email" class="form-control" value="<?php echo fcusis_html($row['email']); ?>">
 </div>
 <!-- <div class="form-group">
 <label>Year/Grade :</label>

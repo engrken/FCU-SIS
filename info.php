@@ -1,6 +1,7 @@
 <?php
 // Initialize the session
-session_start();
+require_once __DIR__ . '/security.php';
+fcusis_start_session();
  
 // Check if the user is logged in, if not then redirect him to login page
 if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
@@ -65,23 +66,28 @@ require_once "config.php";
 
 // Check connection
 if($link === false){
-    die("ERROR: Could not connect. " . mysqli_connect_error());
+    http_response_code(503);
+    exit('This service is unavailable.');
 }
  
-$result = mysqli_query($link,"SELECT * FROM users WHERE sid='" . $_SESSION["sid"] . "'");
+$profile = $link->prepare('SELECT * FROM users WHERE sid=?');
+$profile->bind_param('s', $_SESSION['sid']);
+$profile->execute();
+$result = $profile->get_result();
 
 echo "<b><center>PERSONAL INFORMATION</center></b>";
 echo "<br>";
 
     while ($row = mysqli_fetch_array($result)) {
       echo "<div id='img_div'>";
-      	echo "<img src='images/".$row['picture']."' >";
+      	echo "<img src='images/".rawurlencode(basename($row['picture']))."' >";
       echo "</div>";
 
 
   ?>
 
   <form method="POST" action="" enctype="multipart/form-data">
+<input type="hidden" name="csrf" value="<?php echo fcusis_html(fcusis_csrf_token()); ?>">
   	<input type="hidden" name="size" value="1000000">
   	<div>
 	<input type="file" name="image"> <br>
@@ -95,52 +101,61 @@ echo "<table align='center'>";
 
 
 echo "<tr>";
-echo "<td align='left'><b>Student ID:</b> " . $row['sid'] . "</td>";
+echo "<td align='left'><b>Student ID:</b> " . fcusis_html($row['sid']) . "</td>";
 echo "</tr>";
 echo "<tr>";
-echo "<td align='left'><b>First Name:</b> " . $row['fname'] . "</td>";
+echo "<td align='left'><b>First Name:</b> " . fcusis_html($row['fname']) . "</td>";
 echo "</tr>";
 echo "<tr>";
-echo "<td align='left'><b>Middle Name:</b> " . $row['mname'] . "</td>";
+echo "<td align='left'><b>Middle Name:</b> " . fcusis_html($row['mname']) . "</td>";
 echo "</tr>";
 echo "<tr>";
-echo "<td align='left'><b>Last Name:</b> " . $row['lname'] . "</td>";
+echo "<td align='left'><b>Last Name:</b> " . fcusis_html($row['lname']) . "</td>";
 echo "</tr>";
 echo "<tr>";
-echo "<td align='left'><b>Address:</b> " . $row['address'] . "</td>";
+echo "<td align='left'><b>Address:</b> " . fcusis_html($row['address']) . "</td>";
 echo "</tr>";
 echo "<tr>";
-echo "<td align='left'><b>Contact:</b> " . $row['contact'] . "</td>";
+echo "<td align='left'><b>Contact:</b> " . fcusis_html($row['contact']) . "</td>";
 echo "</tr>";
 echo "<tr>";
-echo "<td align='left'><b>Email:</b> " . $row['email'] . "</td>";
+echo "<td align='left'><b>Email:</b> " . fcusis_html($row['email']) . "</td>";
 echo "</tr>";
 echo "<tr>";
-echo "<td align='left'><b>Year/Grade:</b> " . $row['grade'] . "</td>";
+echo "<td align='left'><b>Year/Grade:</b> " . fcusis_html($row['grade']) . "</td>";
 echo "</tr>";
 echo "<tr>";
-echo "<td align='left'><b>Section:</b> " . $row['section'] . "</td>";
+echo "<td align='left'><b>Section:</b> " . fcusis_html($row['section']) . "</td>";
 echo "</tr>";
 }
 echo "</table>";
 
-  // Initialize message variable
-  $msg = "";
-
-  // If upload button is clicked ...
-  if (isset($_POST['upload'])) {
-                //get file extension.
-                $ext = pathinfo($_FILES['image']['name'])['extension'];
-                //generate the new random string for filename and append extension.
-                $nFn = generateRandomString().".$ext";
-		move_uploaded_file($_FILES['image']['tmp_name'],"images/".$nFn);
-
-	mysqli_query($link,"UPDATE users set picture= '{$nFn}' WHERE sid= '{$_SESSION['sid']}'");
-	echo "<meta http-equiv='refresh' content='0'>";
-  }
-
-function generateRandomString($length = 15) {
-    return substr(str_shuffle("abcdefghijklmnopqrstuvwxyz"), 0, $length);
+if (isset($_POST['upload'])) {
+    fcusis_require_csrf();
+    $upload = $_FILES['image'] ?? [];
+    if (($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK
+        || ($upload['size'] ?? 0) > 1048576 || !is_uploaded_file($upload['tmp_name'])
+        || !function_exists('imagecreatefromstring')) {
+        http_response_code(400);
+        exit('Upload a valid image under 1 MB.');
+    }
+    $imageInfo = @getimagesize($upload['tmp_name']);
+    if (!$imageInfo || $imageInfo[0] > 2048 || $imageInfo[1] > 2048
+        || !in_array($imageInfo[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG], true)) {
+        http_response_code(400);
+        exit('Use a JPEG or PNG no larger than 2048 × 2048 pixels.');
+    }
+    $image = @imagecreatefromstring(file_get_contents($upload['tmp_name']));
+    $filename = bin2hex(random_bytes(20)) . '.png';
+    if (!$image || !imagepng($image, __DIR__ . '/images/' . $filename)) {
+        http_response_code(400);
+        exit('Unable to save the photo.');
+    }
+    imagedestroy($image);
+    $update = $link->prepare('UPDATE users SET picture=? WHERE sid=?');
+    $update->bind_param('ss', $filename, $_SESSION['sid']);
+    $update->execute();
+    echo "<meta http-equiv='refresh' content='0'>";
 }
 
 mysqli_close($link);
