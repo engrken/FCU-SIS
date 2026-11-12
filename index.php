@@ -1,10 +1,10 @@
 <?php
 
 // Password protect this content
-require_once('protect-this.php');  // Access code is beta
+require_once('protect-this.php');
 
 // Initialize the session
-session_start();
+fcusis_start_session();
  
 // Check if the user is already logged in, if yes then redirect him to welcome page
 if(isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true){
@@ -59,8 +59,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                     mysqli_stmt_bind_result($stmt, $id, $username, $hashed_password, $fname, $sid, $admin, $grade);
                     if(mysqli_stmt_fetch($stmt)){
                         if(password_verify($password, $hashed_password)){
-                            // Password is correct, so start a new session
-                            session_start();
+                            session_regenerate_id(true);
                             
                             // Store data in session variables
                             $_SESSION["loggedin"] = true;

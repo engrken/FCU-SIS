@@ -1,7 +1,8 @@
 <?php
 
 // Initialize the session
-session_start();
+require_once __DIR__ . '/security.php';
+fcusis_start_session();
  
 // Check if the user is logged in, if not then redirect him to login page
 if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
@@ -10,7 +11,7 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
 }
 
 // Check if the user is admin, if not then redirect him to welcome page
-if(isset($_SESSION["admin"]) && $_SESSION["admin"] !== 1){
+if((int) ($_SESSION['admin'] ?? 0) !== 1){
     header("location: welcome.php");
     exit;
 }
@@ -19,11 +20,7 @@ if(isset($_SESSION["admin"]) && $_SESSION["admin"] !== 1){
 
 <?php
 
-if (isset($_GET['page_no']) && $_GET['page_no']!="") {
-    $page_no = $_GET['page_no'];
-    } else {
-        $page_no = 1;
-        }
+$page_no = max(1, min(100000, (int) ($_GET['page_no'] ?? 1)));
 
 $total_records_per_page = 5;
 
@@ -38,7 +35,8 @@ require_once "config.php";
 
 // Check connection
 if($link === false){
-    die("ERROR: Could not connect. " . mysqli_connect_error());
+    http_response_code(503);
+    exit('This service is unavailable.');
 }
 
 $result_count = mysqli_query($link,"SELECT COUNT(*) As total_records FROM `users` WHERE admin=0");
@@ -105,7 +103,7 @@ if($_SESSION['admin'] == 1 ) {
         <div id="navbar" class="navbar-collapse collapse">
             <div class="navbar-form navbar-right">
                 <label class="text-primary">
-                    Hi, <?php echo $_SESSION['fname']; ?>&nbsp;&nbsp;
+                    Hi, <?php echo fcusis_html($_SESSION['fname']); ?>&nbsp;&nbsp;
                 </label>
        	 	<a onclick="window.location.href=this" class="btn btn-danger">Refresh</a>
                 <a href="../welcome.php"><button type="button" class="btn btn-success" name="submit">Home</button></a>
@@ -144,22 +142,22 @@ if($_SESSION['admin'] == 1 ) {
  <?php
 while($rowtwo = mysqli_fetch_array($result)){
   echo '<tbody><tr>
-	<td style="vertical-align: middle"><img width=100px height=100px src="images/'.$rowtwo["picture"].'"></td>
-	<td style="vertical-align: middle">' .$rowtwo['sid'].'</td>
-	<td style="vertical-align: middle">' .$rowtwo['fname'].'</td>
-	<td style="vertical-align: middle">' .$rowtwo['mname'].'</td>
-	<td style="vertical-align: middle">' .$rowtwo['lname'].'</td>
-	<td style="vertical-align: middle">' .$rowtwo['address'].'</td>
-	<td style="vertical-align: middle">' .$rowtwo['contact'].'</td>
-	<td style="vertical-align: middle">' .$rowtwo['email'].'</td>
-	<td style="vertical-align: middle">' .$rowtwo['grade'].'</td>
-	<td style="vertical-align: middle">' .$rowtwo['section'].'</td>
-	<td style="vertical-align: middle">' .$rowtwo['lastlogin'].'</td>
+	<td style="vertical-align: middle"><img width=100px height=100px src="images/'.fcusis_html($rowtwo["picture"]).'"></td>
+	<td style="vertical-align: middle">' .fcusis_html($rowtwo['sid']).'</td>
+	<td style="vertical-align: middle">' .fcusis_html($rowtwo['fname']).'</td>
+	<td style="vertical-align: middle">' .fcusis_html($rowtwo['mname']).'</td>
+	<td style="vertical-align: middle">' .fcusis_html($rowtwo['lname']).'</td>
+	<td style="vertical-align: middle">' .fcusis_html($rowtwo['address']).'</td>
+	<td style="vertical-align: middle">' .fcusis_html($rowtwo['contact']).'</td>
+	<td style="vertical-align: middle">' .fcusis_html($rowtwo['email']).'</td>
+	<td style="vertical-align: middle">' .fcusis_html($rowtwo['grade']).'</td>
+	<td style="vertical-align: middle">' .fcusis_html($rowtwo['section']).'</td>
+	<td style="vertical-align: middle">' .fcusis_html($rowtwo['lastlogin']).'</td>
 	<td style="vertical-align: middle">
 
 		<form action="smodify.php" method="get">
                 <label for="username"></label>
-                <input type="hidden" name="username" value="' .$rowtwo['sid'].'">
+                <input type="hidden" name="username" value="' .fcusis_html($rowtwo['sid']).'">
                 <input type="submit" name="submit" value="UPDATE INFO" class="btn btn-primary">
 		</form>
 	';
@@ -168,13 +166,13 @@ while($rowtwo = mysqli_fetch_array($result)){
          echo '
 		<form action="academe/search.php" method="get">
                 <label for="studentid"></label>
-                <input type="hidden" name="studentid" value="' .$rowtwo['sid'].'">
+                <input type="hidden" name="studentid" value="' .fcusis_html($rowtwo['sid']).'">
                 <input type="submit" name="submit" value="UPDATE GRADE" class="btn btn-primary">
 		</form>
 
 		<form action="academe/add.php" method="get">
                 <label for="studentid"></label>
-                <input type="hidden" name="studentid" value="' .$rowtwo['sid'].'">
+                <input type="hidden" name="studentid" value="' .fcusis_html($rowtwo['sid']).'">
                 <input type="submit" name="submit" value="ADD GRADE" class="btn btn-primary">
 		</form>
 

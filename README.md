@@ -1,13 +1,7 @@
-# FCU-SIS
-Filamer Christian University Student Information System (Unofficial)
+# FCU Student Information System
 
+Legacy PHP implementation for FCU student records.
 
-This project was intended for my personal use only. You are free to copy, modify, and use this system. Visit the official site of <a href="http://filamer.edu.ph">Filamer Christian University</a>.
+## Deployment
 
-If you have any questions and/or feedbacks, feel free to comment/drop your email address so I can message you.
-
-
-Note:
-1. Make sure to configure the connection details (see config.php)
-2. Use the account (username: admin password: admin123)
-3. Demo page https://fcubsece.tk
+Use HTTPS with PHP 8.2 or later and the mysqli and GD extensions. Set `FCU_SIS_DB_HOST`, `FCU_SIS_DB_USER`, `FCU_SIS_DB_PASSWORD`, `FCU_SIS_DB_NAME`, and `FCU_SIS_ACCESS_PASSWORD_HASH` in the server environment. Generate the access hash with PHP's `password_hash` and a unique password. The SQL file contains the schema. Contact the school administrator for account recovery.

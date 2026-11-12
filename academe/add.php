@@ -3,7 +3,8 @@
     include('../config.php'); 
 
 // Initialize the session
-session_start();
+require_once __DIR__ . '/../security.php';
+fcusis_start_session();
  
 // Check if the user is logged in, if not then redirect him to login page
 if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
@@ -12,16 +13,18 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
 }
 
 // Check if the user is admin, if not then redirect him to welcome page
-if(isset($_SESSION["admin"]) && $_SESSION["admin"] !== 1){
+if((int) ($_SESSION['admin'] ?? 0) !== 1){
     header("location: ../welcome.php");
     exit;
 }
 
-if(count($_POST)>0) {
-$sql = "INSERT INTO acad (sid, sy, sem, scode, stitle, prelim, midterm, prefi, final, equi, remarks) VALUES ('$_POST[sid]','$_POST[sy]','$_POST[sem]','$_POST[scode]','$_POST[stitle]','$_POST[prelim]','$_POST[midterm]','$_POST[prefi]','$_POST[final]','$_POST[equi]','$_POST[remarks]')";
-
-
-mysqli_query($link, $sql);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    fcusis_require_csrf();
+    $fields = ['sid', 'sy', 'sem', 'scode', 'stitle', 'prelim', 'midterm', 'prefi', 'final', 'equi', 'remarks'];
+    $values = array_map('fcusis_post', $fields);
+    $insert = $link->prepare('INSERT INTO acad (sid, sy, sem, scode, stitle, prelim, midterm, prefi, final, equi, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $insert->bind_param(str_repeat('s', count($fields)), ...$values);
+    $insert->execute();
 $message = "Information Modified Successfully";
 }
 
@@ -74,7 +77,7 @@ if($_SESSION['admin'] == 1 ) {
         <div id="navbar" class="navbar-collapse collapse">
             <div class="navbar-form navbar-right">
                 <label class="text-primary">
-                    Hi, <?php echo $_SESSION['fname']; ?>&nbsp;&nbsp;
+                    Hi, <?php echo fcusis_html($_SESSION['fname']); ?>&nbsp;&nbsp;
                 </label>
                 <a href="../welcome.php"><button type="button" class="btn btn-success" name="submit">Home</button></a>
                 <a href="../logout.php"><button type="button" class="btn btn-info" name="submit">Sign Out</button></a>
@@ -93,13 +96,14 @@ if($_SESSION['admin'] == 1 ) {
             <h2 class="text-center">Add Student Grade</h2>
 
 
-<form name="frmUser" method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
+<form name="frmUser" method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>
+<input type="hidden" name="csrf" value="<?php echo fcusis_html(fcusis_csrf_token()); ?>">">
 <div><?php if(isset($message)) { echo $message; } ?>
 </div>
 
 <div class="form-group">
 <label>Student ID: </label>
-<input class="form-control" type="text" name="sid" value="<?php echo $_GET['studentid']; ?>" required>
+<input class="form-control" type="text" name="sid" value="<?php echo fcusis_html($_GET['studentid'] ?? ''); ?>" required>
 </div>
 <div class="form-group">
 <table align="center" style="width:80%" class="table table-bordered">

@@ -1,19 +1,8 @@
 <?php
+require_once __DIR__ . '/security.php';
+fcusis_start_session();
 
-    /* Your password */
-
-    $password = 'beta';
-
-
-
-    if (empty($_COOKIE['password']) || $_COOKIE['password'] !== $password) {
-
-        // Password not set or incorrect. Send to login.php.
-
-        header('Location: login.php');
-
-        exit;
-
-    }
-
-?>
+if (($_SESSION['legacy_site_access_until'] ?? 0) <= time()) {
+    header('Location: login.php');
+    exit;
+}

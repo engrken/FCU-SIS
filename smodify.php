@@ -1,6 +1,7 @@
 <?php
 // Initialize the session
-session_start();
+require_once __DIR__ . '/security.php';
+fcusis_start_session();
  
 // Check if the user is logged in, if not then redirect him to login page
 if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
@@ -9,7 +10,7 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
 }
 
 // Check if the user is admin, if not then redirect him to welcome page
-if(isset($_SESSION["admin"]) && $_SESSION["admin"] !== 1){
+if((int) ($_SESSION['admin'] ?? 0) !== 1){
     header("location: welcome.php");
     exit;
 }
@@ -22,15 +23,31 @@ require_once "config.php";
 
 // Check connection
 if($link === false){
-    die("ERROR: Could not connect. " . mysqli_connect_error());
+    http_response_code(503);
+    exit('This service is unavailable.');
 }
 
-$search = $_GET['username'];
-$result = mysqli_query($link,"SELECT * FROM users WHERE sid='$search'");
+$studentId = is_string($_GET['username'] ?? null) ? $_GET['username'] : '';
+$select = $link->prepare('SELECT * FROM users WHERE sid=?');
+$select->bind_param('s', $studentId);
+$select->execute();
+$result = $select->get_result();
 $row= mysqli_fetch_array($result);
 
-if(count($_POST)>1) {
-mysqli_query($link,"UPDATE users set fname='" . $_POST['fname'] . "', mname='" . $_POST['mname'] . "', lname='" . $_POST['lname'] . "', address='" . $_POST['address'] . "' , contact='" . $_POST['contact'] . "' , email='" . $_POST['email'] . "' , grade='" . $_POST['grade'] . "', section='" . $_POST['section'] . "', admin='" . $_POST['admin'] . "' WHERE sid='$search'");
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    fcusis_require_csrf();
+    $first = fcusis_post('fname');
+    $middle = fcusis_post('mname');
+    $last = fcusis_post('lname');
+    $address = fcusis_post('address');
+    $contact = fcusis_post('contact');
+    $email = fcusis_post('email');
+    $grade = fcusis_post('grade');
+    $section = fcusis_post('section');
+    $adminFlag = fcusis_post('admin') === '1' ? 1 : 0;
+    $update = $link->prepare('UPDATE users SET fname=?, mname=?, lname=?, address=?, contact=?, email=?, grade=?, section=?, admin=? WHERE sid=?');
+    $update->bind_param('ssssssssis', $first, $middle, $last, $address, $contact, $email, $grade, $section, $adminFlag, $studentId);
+    $update->execute();
 echo '<script>alert("Information has been modified successfully!");</script>';
 
 }
@@ -88,7 +105,8 @@ require_once "config.php";
 
 // Check connection
 if($link === false){
-    die("ERROR: Could not connect. " . mysqli_connect_error());
+    http_response_code(503);
+    exit('This service is unavailable.');
 }
 $admincheck = mysqli_query($link,"SELECT * From users WHERE admin = 1");          
 $admin = mysqli_fetch_array($admincheck);
@@ -103,7 +121,7 @@ if($admin == true){
         <div id="navbar" class="navbar-collapse collapse">
             <div class="navbar-form navbar-right">
                 <label class="text-primary">
-                    Hi, <?php echo $_SESSION['fname']; ?>&nbsp;&nbsp;
+                    Hi, <?php echo fcusis_html($_SESSION['fname']); ?>&nbsp;&nbsp;
                 </label>
                 <a href="../welcome.php"><button type="button" class="btn btn-success" name="submit">Home</button></a>
                 <a href="../logout.php"><button type="button" class="btn btn-info" name="submit">Sign Out</button></a>
@@ -116,12 +134,13 @@ if($admin == true){
       <!-- Example row of columns -->
     <div class="row">
         <div class="col-lg-12">
-            <h2 class="text-center">Modify <?php echo $row['fname']; ?> <?php echo $row['lname']; ?> Information</h2>
+            <h2 class="text-center">Modify <?php echo fcusis_html($row['fname']); ?> <?php echo fcusis_html($row['lname']); ?> Information</h2>
 
 
 </head>
 
 <form name="frmUser" method="post" action="">
+<input type="hidden" name="csrf" value="<?php echo fcusis_html(fcusis_csrf_token()); ?>">
 <div><?php if(isset($message)) { echo $message; } ?>
 </div>
 
@@ -150,11 +169,11 @@ if($admin == true){
                                 <td class="text-center">
 					<?php if($admin == true){
 						?>
-					<input type="text" name="username" class="form-control" value="<?php echo $row['username']; ?>">
+					<input type="text" name="username" class="form-control" value="<?php echo fcusis_html($row['username']); ?>">
 					<?php
 						} else {
 						?>
-					<input type="text" name="username" class="form-control" value="<?php echo $row['username']; ?>"readonly>
+					<input type="text" name="username" class="form-control" value="<?php echo fcusis_html($row['username']); ?>"readonly>
 					<?php
 						}
 						?>
@@ -163,44 +182,44 @@ if($admin == true){
                                 <td class="text-center">
 					<?php if($admin == true){
 						?>
-					<input type="text" name="sid" class="form-control" value="<?php echo $row['sid']; ?>">
+					<input type="text" name="sid" class="form-control" value="<?php echo fcusis_html($row['sid']); ?>">
 					<?php
 						} else {
 					?>
-					<input type="text" name="sid" class="form-control" value="<?php echo $row['sid']; ?>"readonly>
+					<input type="text" name="sid" class="form-control" value="<?php echo fcusis_html($row['sid']); ?>"readonly>
 					<?php
 						}
 						?>
 				</td>
 
                                 <td class="text-center">
-				<input type="text" name="fname" class="form-control" value="<?php echo $row['fname']; ?>">
+				<input type="text" name="fname" class="form-control" value="<?php echo fcusis_html($row['fname']); ?>">
 				</td>
 
 
                                 <td class="text-center">
-				<input type="text" name="mname" class="form-control" value="<?php echo $row['mname']; ?>">
+				<input type="text" name="mname" class="form-control" value="<?php echo fcusis_html($row['mname']); ?>">
 				</td>
 
                                 <td class="text-center">
-				<input type="text" name="lname" class="form-control" value="<?php echo $row['lname']; ?>">
+				<input type="text" name="lname" class="form-control" value="<?php echo fcusis_html($row['lname']); ?>">
 				</td>
 
                                 <td class="text-center">
-				<input type="text" name="address" class="form-control" value="<?php echo $row['address']; ?>">
+				<input type="text" name="address" class="form-control" value="<?php echo fcusis_html($row['address']); ?>">
 				</td>
 
                                 <td class="text-center">
-				<input type="text" name="contact" class="form-control" value="<?php echo $row['contact']; ?>">
+				<input type="text" name="contact" class="form-control" value="<?php echo fcusis_html($row['contact']); ?>">
 				</td>
 
                                 <td class="text-center">
-				<input type="email" name="email" class="form-control" value="<?php echo $row['email']; ?>">
+				<input type="email" name="email" class="form-control" value="<?php echo fcusis_html($row['email']); ?>">
 				</td>
 
                                 <td class="text-center">
                 		<select class="form-control" name="grade">
-				<option value ="<?php echo $row['grade']; ?>"><?php echo $row['grade']; ?></option>
+				<option value ="<?php echo fcusis_html($row['grade']); ?>"><?php echo fcusis_html($row['grade']); ?></option>
 				<option value ="11">11</option>
 				<option value ="12">12</option>
 				<option value ="1st Year">1st Year</option>
@@ -212,7 +231,7 @@ if($admin == true){
 
                                 <td class="text-center">
              			<select class="form-control" name="section">
-				<option value ="<?php echo $row['section']; ?>"><?php echo $row['section']; ?></option>
+				<option value ="<?php echo fcusis_html($row['section']); ?>"><?php echo fcusis_html($row['section']); ?></option>
 				<option value ="A">A</option>
 				<option value ="B">B</option>
 				<option value ="None">None</option>
